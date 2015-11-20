@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Lighthouse
+Lighthouse53
 
 Update Route53 domain 'A' level resources with your current external IP.
 
@@ -13,8 +13,10 @@ import urllib2
 import boto3
 
 def init():
-	logging.basicConfig(level=logging.DEBUG,
-						format='%(asctime)s %(message)s')
+	logging.basicConfig(
+		filename='',
+		level=logging.DEBUG,
+		format='%(asctime)s %(message)s')
 	parser = argparse.ArgumentParser(description='UPSERT Route53 names')
 	parser.add_argument('--loglevel')
 
@@ -22,8 +24,6 @@ def main():
 	currentIP = getExternalIP()
 	if (!currentIP):
 		logging.error('Unable to retrieve external IP')
-
-
 
 def getCurrentRecord():
 	pass
