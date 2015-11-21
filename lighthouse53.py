@@ -32,17 +32,16 @@ def init():
 		filename='/var/log/lighthouse53',
 		level=logLevels[config.loglevel],
 		format='%(asctime)s %(message)s')
-
 	return config
 
 def main(config):
 	currentIP = getExternalIP()
-	if (!currentIP):
+	if (currentIP == False):
 		logging.error('Unable to retrieve external IP')
 		return 1000
 	client = boto3.client('route53')
 	currentRecord = getCurrentRecord(client, config.hostedZoneId, config.name)
-	if (!currentRecord):
+	if (currentRecord == False):
 		logging.error('Unable to retrieve current record')
 		return 1010
 	if(currentIP == currentRecord):
