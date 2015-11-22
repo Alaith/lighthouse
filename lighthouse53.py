@@ -15,7 +15,7 @@ import boto3
 def init():
 	parser = argparse.ArgumentParser(
 		description='UPSERT a Route53 resource with your current external IPv4 address')
-	parser.add_argument('--loglevel', choices=['CRITICAL','INFO','WARN','ERROR','DEBUG'], type=str, help="The logging level you wish to see in the log file.", default='WARN')
+	parser.add_argument('--loglevel', choices=['CRITICAL','ERROR','WARN','INFO','DEBUG'], type=str, help="The logging level you wish to see in the log file.", default='WARN')
 	parser.add_argument('--ttl', help="The time to live (ttl) that you wish to have assigned for the record",type=int,default=7200)
 	parser.add_argument('name', type=str, help="The domain record name to upsert")
 	parser.add_argument('hostedZoneId', type=str, help="The hostedZoneId in which this route53 domain is hosted")
@@ -35,25 +35,25 @@ def init():
 	return config
 
 def main(config):
+	logging.debug(config)
 	currentIP = getExternalIP()
 	if (currentIP == False):
 		logging.error('Unable to retrieve external IP')
-		return 1000
+		return 
 	client = boto3.client('route53')
 	currentRecord = getCurrentRecord(client, config.hostedZoneId, config.name)
-	if (currentRecord == False):
-		logging.error('Unable to retrieve current record')
-		return 1010
+	if (currentRecord == None):
+		logging.warn('Unable to retrieve current record')
 	if(currentIP == currentRecord):
 		logging.info('No change')
-		return 0
+		return
 	else:
 		if (postIP(client, config.hostedZoneId, config.name, currentIP, config.ttl)):
 			logging.info('Upsert with %s', currentIP)
 			return 0
 		else:
 			logging.warn('Upsert failed')
-			return 1020
+			return 
 
 def getCurrentRecord(client, hostedZoneId, name):
 	logging.debug('Retrieving current record')
@@ -65,13 +65,15 @@ def getCurrentRecord(client, hostedZoneId, name):
 			MaxItems='1')
 	except:
 		logging.error('Error retrieving current record', exc_info = True)
-		return False
-	if ('ResourceRecordSets' not in response):
-		return False
-	else if ('ResourceRecords' not in response['ResourceRecordSets'][0]):
-		return False
+		return None
+	try:
+		record = response.get('ResourceRecordSets')[0].get('ResourceRecords')[0].get('Value')
+	except:
+		logging.error('Error parsing response', exc_info = True)
+		return None
 	else:
-		return response['ResourceRecordSets'][0]['ResourceRecords'][0]['Value']
+		return record
+		
 
 def getExternalIP():
 	logging.debug('Retrieving external IP')
@@ -112,11 +114,11 @@ def postIP(client, hostedZoneId, name, newip, ttl):
 	except:
 		logging.error("Error submitting change request", exc_info = True)
 		return False
-	if (response['Status'] == "PENDING"):
+	if (response.get('ChangeInfo').get('Status') == "PENDING"):
 		logging.debug('Change pending')
 		waiter = client.get_waiter('resource_record_sets_changed')
 		try:
-			waiter.wait(Id=response['Id'])
+			waiter.wait(Id=response.get('ChangeInfo').get('Id'))
 		except:
 			logging.error("Error waiting for change", exc_info = True)
 			return False
@@ -125,4 +127,4 @@ def postIP(client, hostedZoneId, name, newip, ttl):
 
 if __name__ == '__main__':
 	config = init()
-	return main(config)
+	main(config)
