@@ -1,12 +1,13 @@
 <a title="By Letterofmarque (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File%3ASambroandcannons.jpg"><img width="256" alt="Sambroandcannons" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Sambroandcannons.jpg/256px-Sambroandcannons.jpg"/></a>
-#lighthouse53
+
+# lighthouse53
 
 Lighthouse53 is a simple dynamic DNS utility script. It upserts domain records in Amazon Web Services' Route53 with your network's public IP address.
 
-##Requrements
+## Requrements
 * [boto3](https://github.com/boto/boto3) 
 
-##Usage
+## Usage
 ```
 usage: lighthouse53.py [-h] [--loglevel {CRITICAL,ERROR,WARN,INFO,DEBUG}]
                        [--ttl TTL]
@@ -31,7 +32,7 @@ You will need to have your AWS credentials in a location that boto3 can find the
 
 Logging is done in /var/log/lighthouse53
 
-###Example:
+### Example:
 From the shell:
 ```
 ./lighthouse53.py --ttl 1200 your.domain.com Z372ZZZOS353PM
@@ -42,5 +43,5 @@ I run the script with cron every 20 minutes to update a domain with my household
 */20 * * * * /opt/lighthouse53/lighthouse53 --loglevel INFO --ttl 1200 redacted.xyz XXXXXXXXXXXXXX
 ```
 
-##License
+## License
 This software is licensed under the GNU GPLv2
