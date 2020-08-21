@@ -11,8 +11,10 @@ Licensed Under the GNU GPLv2
 """
 import logging
 import argparse
-import urllib2
+import urllib
+import sys
 import boto3
+import json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -61,13 +63,13 @@ def getCurrentRecord(route53client, hostedZoneId, name):
 def getExternalIP():
 	logger.debug('Retrieving external IP')
 	try:
-		extIPResource = urllib2.urlopen('https://api.ipify.org')
+		extIPResource = urllib.request.urlopen('https://api.ipify.org')
 	except:
 		logger.error("Error retrieving external IP", exc_info = True)
 		return None
 	logger.debug("Status: %i", extIPResource.getcode())
 	if (extIPResource.getcode() == 200):
-		externalIP = extIPResource.read(20)
+		externalIP = extIPResource.read(20).decode()
 		logger.debug('External IP: %s', externalIP)
 		return externalIP
 	else:
@@ -109,11 +111,19 @@ def postIP(route53client, hostedZoneId, name, newip, ttl):
 	logger.debug('Change confirmed')
 	return True
 
+class StructuredMessage:
+	def __init__(self, message, /, **kwargs):
+		self.message = message
+		self.kwargs = kwargs
+	def __str__(self):
+		t = dict(self.kwargs).update({"message":self.message})
+		return json.dumps(t)
+
 if __name__ == '__main__':
 	from logging.handlers import WatchedFileHandler
 	parser = argparse.ArgumentParser(
 		description='UPSERT a Route53 resource with your current external IPv4 address')
-	parser.add_argument('--loglevel', choices=['CRITICAL','ERROR','WARN','INFO','DEBUG'], type=str, help="The logging level you wish to see in the log file. Default: 'WARN'", default='WARN')
+	parser.add_argument('--loglevel', choices=['CRITICAL','ERROR','WARN','INFO','DEBUG'], type=str, help="The logging level you wish to use. Default: 'WARN'", default='WARN')
 	parser.add_argument('--ttl', help="The time to live (ttl) that you wish to have assigned for the record. Default: 7200",type=int,default=7200)
 	parser.add_argument('name', type=str, help="The domain record name to upsert")
 	parser.add_argument('hostedZoneId', type=str, help="The hostedZoneId in which this route53 domain is hosted")
@@ -126,7 +136,7 @@ if __name__ == '__main__':
 		'INFO': 20,
 		'DEBUG': 10
 	}
-	logfh = WatchedFileHandler('/var/log/lighthouse53')
+	logfh = logging.StreamHandler(stream=sys.stdout)
 	logfh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 
 	logger.setLevel(logLevels[config.loglevel])
@@ -134,5 +144,6 @@ if __name__ == '__main__':
 	logging.getLogger('boto3').setLevel(logging.WARN)
 	logging.getLogger('boto3').addHandler(logfh)
 
-	main(config.hostedZoneId,config.name,config.ttl)
+	rc = main(config.hostedZoneId,config.name,config.ttl)
 	logging.shutdown()
+	sys.exit(rc)

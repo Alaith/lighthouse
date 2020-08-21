@@ -1,0 +1,1 @@
+*/1 * * * * python /usr/local/bin/lighthouse53.py --ttl 3600 home.noahkipin.com Z272WSEOS572FM
